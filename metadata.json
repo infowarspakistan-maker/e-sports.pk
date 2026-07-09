@@ -1,0 +1,6 @@
+{
+  "name": "E-Sports Pakistan",
+  "description": "Pakistan's complete esports ecosystem connecting competitive players, professional rosters, tournaments, and sponsors across all platforms and gaming titles.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

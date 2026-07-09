@@ -1,0 +1,125 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'infowarspakistan@gmail.com' ||
+        request.auth.token.email == 'infowarspakistan@gmail.cin' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && (
+        request.auth.token.email_verified == true || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isVerified == true)
+      );
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /players/{playerId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /teams/{teamId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /sponsors/{sponsorId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /tournaments/{tourneyId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /news/{newsId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /rss_feeds/{feedId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /media/{mediaId} {
+      allow read: if true;
+      allow create: if isVerifiedUser() && request.resource.data.uploadedBy == request.auth.uid;
+      allow update: if (isVerifiedUser() && resource.data.uploadedBy == request.auth.uid) || isAdmin();
+      allow delete: if (isSignedIn() && resource.data.uploadedBy == request.auth.uid) || isAdmin();
+    }
+
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update: if (isVerifiedUser() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow delete: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+
+    match /feedback/{feedbackId} {
+      allow read: if isVerifiedUser() || isAdmin();
+      allow create: if isVerifiedUser() && request.resource.data.submittedBy == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    match /system_settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /games/{gameId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /sliders/{sliderId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /rankings/{rankingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /rankingHistory/{historyId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if isAdmin();
+    }
+  }
+}

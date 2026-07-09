@@ -1,0 +1,10 @@
+# E-Sports Pakistan (e-sports.pk) Robots Configuration
+# Managed automatically by Audit Compliance Engine
+
+User-agent: *
+Allow: /
+Disallow: /dashboard/admin
+Disallow: /dashboard
+Disallow: /search
+
+Sitemap: https://e-sports.pk/sitemap.xml

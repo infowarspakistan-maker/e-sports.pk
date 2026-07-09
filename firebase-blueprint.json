@@ -1,0 +1,121 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile document.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["player", "team", "sponsor", "admin", "user"] },
+        "createdAt": { "type": "timestamp" },
+        "updatedAt": { "type": "timestamp" },
+        "isVerified": { "type": "boolean" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["email", "role"]
+    },
+    "Player": {
+      "title": "Player",
+      "description": "Player profile details.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "game": { "type": "string" },
+        "city": { "type": "string" },
+        "bio": { "type": "string" }
+      },
+      "required": ["userId", "game"]
+    },
+    "News": {
+      "title": "News",
+      "description": "News articles.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "category": { "type": "string" },
+        "publishedAt": { "type": "timestamp" }
+      }
+    },
+    "Media": {
+      "title": "Media",
+      "description": "Uploaded media item metadata.",
+      "type": "object",
+      "properties": {
+        "url": { "type": "string" },
+        "fileName": { "type": "string" },
+        "fileSize": { "type": "integer" },
+        "contentType": { "type": "string" },
+        "uploadedBy": { "type": "string" },
+        "uploaderName": { "type": "string" },
+        "uploaderPhoto": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "gameId": { "type": "string" },
+        "likesCount": { "type": "integer" },
+        "likedBy": { "type": "array" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["url", "uploadedBy", "title"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "Comment metadata.",
+      "type": "object",
+      "properties": {
+        "targetType": { "type": "string" },
+        "targetId": { "type": "string" },
+        "content": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["targetType", "targetId", "content", "userId"]
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "Platform feedback metadata.",
+      "type": "object",
+      "properties": {
+        "category": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "submittedBy": { "type": "string" },
+        "submitterName": { "type": "string" },
+        "submitterEmail": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["category", "title", "description", "submittedBy"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User documents."
+    },
+    "/players/{playerId}": {
+      "schema": { "$ref": "#/entities/Player" },
+      "description": "Player profiles."
+    },
+    "/news/{newsId}": {
+      "schema": { "$ref": "#/entities/News" },
+      "description": "News articles."
+    },
+    "/media/{mediaId}": {
+      "schema": { "$ref": "#/entities/Media" },
+      "description": "Uploaded media items."
+    },
+    "/comments/{commentId}": {
+      "schema": { "$ref": "#/entities/Comment" },
+      "description": "Comments."
+    },
+    "/feedback/{feedbackId}": {
+      "schema": { "$ref": "#/entities/Feedback" },
+      "description": "Platform feedback."
+    }
+  }
+}
