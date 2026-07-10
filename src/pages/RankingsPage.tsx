@@ -228,7 +228,13 @@ export const RankingsPage = () => {
               }`}
               style={activeGame === game.id ? { backgroundColor: game.color || '#7B61FF', boxShadow: `0 0 15px ${game.color || '#7B61FF'}66` } : {}}
             >
-              <span className="mr-2">{game.icon}</span>
+              <span className="mr-2">
+                {game.icon.startsWith('http') ? (
+                  <img src={game.icon} alt="" className="w-4 h-4 inline-block object-contain" />
+                ) : (
+                  game.icon
+                )}
+              </span>
               {game.name}
             </button>
           ))}

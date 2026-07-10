@@ -5,6 +5,7 @@ import { db } from '../lib/firebase';
 import { SUPPORTED_GAMES } from '../lib/constants';
 import { useAuthContext } from '../components/global/AuthProvider';
 import { ImageUpload } from '../components/shared/ImageUpload';
+import { TeamCard } from '../components/features/TeamCard';
 
 const DEFAULT_TEAM_LOGOS = [
   'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=150&auto=format&fit=crop&q=80',
@@ -465,110 +466,16 @@ export const TeamsPage = () => {
             const achievements = getTeamMedalsAndWins(team.id);
 
             return (
-              <div 
-                key={team.id} 
-                onClick={() => {
+              <TeamCard
+                key={team.id}
+                team={team}
+                roster={roster}
+                achievements={achievements}
+                onViewDetails={() => {
                   setActiveTeam(team);
                   setShowDetailModal(true);
                 }}
-                className="group relative h-full flex flex-col bg-[#080B14] rounded-[24px] border border-white/5 hover:border-[#00D4FF]/30 transition-all duration-500 cursor-pointer shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4"
-              >
-                {/* Background Atmosphere */}
-                <div 
-                  className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity blur-3xl pointer-events-none" 
-                  style={{ backgroundColor: team.color || '#00D4FF' }}
-                ></div>
-
-                {/* Banner Strip */}
-                <div className="h-36 relative overflow-hidden">
-                  <img 
-                    src={team.bannerUrl || DEFAULT_TEAM_BANNERS[0]} 
-                    className="w-full h-full object-cover grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" 
-                    alt={team.name} 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#080B14] via-[#080B14]/40 to-transparent"></div>
-                  
-                  {/* Status Indicator */}
-                  <div className="absolute top-4 right-4">
-                    <span className={`px-2.5 py-1 rounded-full text-[8px] font-mono font-bold uppercase tracking-widest border backdrop-blur-md ${
-                      team.status === 'Recruiting' ? 'bg-[#00D4FF]/20 text-[#00D4FF] border-[#00D4FF]/40' : 'bg-gray-500/20 text-gray-400 border-white/10'
-                    }`}>
-                      {team.status === 'Recruiting' ? 'Recruiting' : 'Roster Full'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Overlapping Identity Hub */}
-                <div className="px-6 -mt-10 relative z-10 flex flex-col">
-                  <div 
-                    className="w-20 h-20 rounded-2xl p-1 bg-black/80 backdrop-blur-md border border-white/10 shadow-[0_15px_35px_rgba(0,0,0,0.5)] flex items-center justify-center font-display font-black text-3xl text-white group-hover:-translate-y-2 transition-transform duration-500"
-                    style={{ color: team.color || '#00D4FF' }}
-                  >
-                    {team.logoUrl ? (
-                      <img src={team.logoUrl} alt={team.name} className="w-full h-full object-cover rounded-xl" />
-                    ) : (
-                      team.name.charAt(0)
-                    )}
-                  </div>
-
-                  <div className="mt-4">
-                    <h3 className="text-2xl font-display font-black text-white group-hover:text-[#00D4FF] transition-colors leading-tight tracking-tighter uppercase italic">
-                      {team.name}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
-                      <MapPin className="w-3 h-3 text-gray-500" />
-                      <span className="text-[9px] font-mono font-bold text-gray-500 uppercase tracking-widest">{team.location || 'Pakistan'}</span>
-                      <span className="text-[#333]">/</span>
-                      <span className="text-[9px] font-mono font-bold text-[#00D4FF] uppercase tracking-widest italic">{team.game}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div className="px-6 py-5 flex-1 flex flex-col">
-                  <p className="text-[13px] text-[#A0A0AB] line-clamp-2 font-body leading-relaxed opacity-80 group-hover:opacity-100 transition-opacity italic mb-6">
-                    "{team.bio || 'Representing the peak of competitive gaming across Pakistan with honor and dedication.'}"
-                  </p>
-
-                  {/* Roster Summary */}
-                  <div className="mt-auto space-y-4">
-                    <div className="flex items-center justify-between">
-                       <span className="text-[8px] font-mono font-bold text-gray-600 uppercase tracking-widest">Active Roster</span>
-                       <div className="flex -space-x-2">
-                          {roster.slice(0, 3).map((m: any, i: number) => (
-                            <div key={i} className="w-7 h-7 rounded-full border-2 border-[#080B14] bg-white/5 overflow-hidden ring-1 ring-white/5 shadow-xl">
-                              <img src={m.avatarUrl} alt="member" className="w-full h-full object-cover" />
-                            </div>
-                          ))}
-                          {roster.length > 3 && (
-                            <div className="w-7 h-7 rounded-full border-2 border-[#080B14] bg-[#121B2A] flex items-center justify-center text-[8px] font-black text-[#00D4FF] ring-1 ring-white/5">
-                              +{roster.length - 3}
-                            </div>
-                          )}
-                          {roster.length === 0 && <span className="text-[8px] text-gray-700 font-mono uppercase">Unstaffed</span>}
-                       </div>
-                    </div>
-                    
-                    {/* Performance Index */}
-                    <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                       <div className="flex flex-col gap-0.5">
-                          <span className="text-[8px] font-mono font-bold text-gray-600 uppercase tracking-widest">Podium Record</span>
-                          <div className="flex items-center gap-1.5 text-[#FFD700] font-mono font-black text-xs uppercase tracking-tighter">
-                             <Trophy className="w-3 h-3" />
-                             {achievements.length} Medals
-                          </div>
-                       </div>
-                       <div className="flex flex-col items-end gap-0.5">
-                          <span className="text-[8px] font-mono font-bold text-gray-600 uppercase tracking-widest">Global Pts</span>
-                          <span className="text-xs font-mono font-black text-white">{ (achievements.length * 100) + (roster.length * 20) } XP</span>
-                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Interaction Overlay */}
-                <div className="absolute inset-0 border-2 border-white/0 group-hover:border-[#00D4FF]/30 rounded-[24px] pointer-events-none transition-all duration-500"></div>
-              </div>
+              />
             );
           })}
         </div>

@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Shield, Search, Filter, MapPin, User, ArrowRight, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { EsportsPlayerCard } from '../components/features/EsportsPlayerCard';
+import { TeamCard } from '../components/features/TeamCard';
 import { SUPPORTED_GAMES } from '../lib/constants';
 
 export const RecruitmentPage = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [lftPlayers, setLftPlayers] = useState<any[]>([]);
   const [recruitingTeams, setRecruitingTeams] = useState<any[]>([]);
@@ -168,7 +170,11 @@ export const RecruitmentPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {filteredPlayers.length > 0 ? (
                 filteredPlayers.map((player) => (
-                  <EsportsPlayerCard key={player.id} player={player} />
+                  <EsportsPlayerCard 
+                    key={player.id} 
+                    player={player} 
+                    onViewProfile={() => navigate('/players')} 
+                  />
                 ))
               ) : (
                 <div className="col-span-full py-20 text-center border border-dashed border-white/5 rounded-[24px]">
@@ -184,59 +190,13 @@ export const RecruitmentPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredTeams.length > 0 ? (
                 filteredTeams.map((team) => (
-                  <div key={team.id} className="bg-[#0A0A0A] border border-white/5 hover:border-[#00D4FF]/30 transition-all rounded-[24px] overflow-hidden group shadow-2xl flex flex-col h-full">
-                    <div className="h-32 relative">
-                      <div className="absolute inset-0 bg-[#00D4FF]/5 group-hover:bg-[#00D4FF]/10 transition-colors"></div>
-                      <img src={team.bannerUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800'} className="w-full h-full object-cover opacity-40 grayscale group-hover:grayscale-0 transition-all duration-700" alt="Team Banner" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] to-transparent"></div>
-                      <div className="absolute top-4 right-4 bg-[#00D4FF]/20 border border-[#00D4FF]/40 text-[#00D4FF] px-2 py-1 rounded-full text-[8px] font-mono font-bold uppercase tracking-widest backdrop-blur-md">
-                        Recruiting
-                      </div>
-                    </div>
-                    
-                    <div className="px-6 -mt-8 relative z-10 flex flex-col flex-1">
-                      <div className="w-16 h-16 rounded-xl bg-black border border-white/10 p-1 mb-4 shadow-xl">
-                        {team.logoUrl ? (
-                          <img src={team.logoUrl} alt={team.name} className="w-full h-full object-cover rounded-lg" />
-                        ) : (
-                          <div className="w-full h-full bg-[#121B2A] rounded-lg flex items-center justify-center font-display font-black text-white text-xl">
-                            {team.name.charAt(0)}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <h3 className="text-2xl font-display font-black text-white uppercase italic tracking-tight mb-2 group-hover:text-[#00D4FF] transition-colors">{team.name}</h3>
-                      <div className="flex items-center gap-3 mb-4">
-                        <span className="text-[10px] font-mono text-[#00D4FF] font-bold uppercase tracking-widest">{team.game}</span>
-                        <span className="w-1 h-1 rounded-full bg-white/10"></span>
-                        <div className="flex items-center gap-1 text-[10px] font-mono text-gray-500 font-bold uppercase tracking-widest">
-                          <MapPin className="w-3 h-3" /> {team.location}
-                        </div>
-                      </div>
-                      
-                      <p className="text-sm text-[#A0A0AB] mb-6 line-clamp-3 leading-relaxed">
-                        "{team.bio || 'Looking for dedicated players to fill our roster and compete in upcoming premier tournaments.'}"
-                      </p>
-                      
-                      <div className="mb-4">
-                        <div className="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-widest mb-2">Open Roles</div>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="px-2 py-1 bg-[#1A73E8]/20 border border-[#1A73E8]/40 text-[#1A73E8] rounded text-[9px] font-mono font-bold uppercase">IGL</span>
-                          <span className="px-2 py-1 bg-[#00E676]/20 border border-[#00E676]/40 text-[#00E676] rounded text-[9px] font-mono font-bold uppercase">Support</span>
-                        </div>
-                      </div>
-
-                      <div className="mt-auto border-t border-white/5 pt-5 pb-5 space-y-3">
-                        <button className="w-full bg-[#00D4FF] hover:bg-white text-black py-2.5 rounded-lg text-xs font-mono font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(0,212,255,0.2)]">
-                          Apply for Tryout
-                        </button>
-                        <Link to={`/teams`} className="flex items-center justify-between text-xs font-mono font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors w-full px-2">
-                          <span>View Team Details</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
+                  <TeamCard
+                    key={team.id}
+                    team={team}
+                    roster={[]}
+                    achievements={[]}
+                    onViewDetails={() => navigate('/teams')}
+                  />
                 ))
               ) : (
                 <div className="col-span-full py-20 text-center border border-dashed border-white/5 rounded-[24px]">

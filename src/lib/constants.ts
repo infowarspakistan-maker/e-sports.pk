@@ -3,7 +3,7 @@ export const SUPPORTED_GAMES = [
     id: 'tekken-8',
     name: 'Tekken 8',
     category: 'fighting',
-    icon: '🥊',
+    icon: 'https://d3h9qea4qy4169.cloudfront.net/Tekken_white_551892f836.svg',
     image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=400&auto=format&fit=crop',
     banner: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop',
     color: '#FF4444',

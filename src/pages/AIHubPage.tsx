@@ -166,6 +166,50 @@ export const AIHubPage = () => {
     }
   };
 
+  // Real-time Scrim Analyzer handler using Gemini
+  const handleAnalyzeScrim = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!scrimMatchStats.trim() || scrimLoading) return;
+
+    setScrimLoading(true);
+    setScrimResult('');
+    try {
+      const prompt = `Act as an elite esports performance coach and tactical analyst. Analyze these match/scrim statistics or logs from a competitive Pakistani team and provide a highly professional, comprehensive performance audit. 
+
+Please structure your response with:
+1. 🛡️ **Tactical Missteps & Critical Errors**: Identify core errors, structural positioning issues, or economy slips.
+2. ⚡ **Key Tactical Improvement Areas**: Offer concrete, game-specific action items (such as aim trade hygiene, utility usage, or map rotations).
+3. 🏋️ **Custom-Tailored Daily Training & Drill Schedule**: Draft a specific 60-minute, step-by-step practice regimen with target metrics.
+
+Make the response incredibly practical, deeply analytical, and formatted in pristine Markdown.
+
+Here is the match data to evaluate:
+${scrimMatchStats}`;
+
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          useSearch: false,
+          thinking: true
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to analyze scrim performance');
+      }
+
+      setScrimResult(data.text);
+    } catch (err: any) {
+      console.error(err);
+      setScrimResult(`⚠️ Error analyzing scrim performance: ${err.message || "Please check your server configurations and GEMINI_API_KEY."}`);
+    } finally {
+      setScrimLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 space-y-10 pb-20">
       
@@ -255,13 +299,7 @@ export const AIHubPage = () => {
                 </div>
                 
                 <button 
-                  onClick={() => {
-                    setScrimLoading(true);
-                    setTimeout(() => {
-                      setScrimResult("1. Tactical Misstep: Economy management was poor in rounds 4-6.\n2. Improvement: Focus on trading frags; your entry isolation is too high.\n3. Drill: 30 minutes of aim-botz focusing on crosshair placement before next scrim.");
-                      setScrimLoading(false);
-                    }, 2000);
-                  }}
+                  onClick={() => handleAnalyzeScrim()}
                   disabled={!scrimMatchStats || scrimLoading}
                   className="w-full bg-[#00D4FF] hover:bg-white text-black font-bold uppercase tracking-widest text-sm py-4 rounded-xl transition-all shadow-[0_0_15px_rgba(0,212,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >

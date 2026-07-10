@@ -484,7 +484,9 @@ export const TournamentsPage = () => {
         >
           <option value="all">🎮 All Games</option>
           {SUPPORTED_GAMES.map(game => (
-            <option key={game.id} value={game.id}>{game.icon} {game.name}</option>
+            <option key={game.id} value={game.id}>
+              {game.icon.startsWith('http') ? '🎮' : game.icon} {game.name}
+            </option>
           ))}
         </select>
 
@@ -857,7 +859,7 @@ export const TournamentsPage = () => {
                   <h4 className="text-[11px] font-bold text-[#00D4FF] uppercase tracking-wider mb-2.5">Live Tournament Bracket</h4>
                   <div className="bg-[#0A0A0A] border border-white/10 rounded-2xl p-4 shadow-xl overflow-hidden relative">
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
-                    <VisualBracket />
+                    <VisualBracket tournamentId={activeTournament.id} isAdmin={isAdmin} />
                   </div>
                 </div>
 

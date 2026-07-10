@@ -109,6 +109,24 @@ export const PlayersPage = () => {
     clu: 80
   });
 
+  // Player Comparison State
+  const [selectedCompareIds, setSelectedCompareIds] = useState<string[]>([]);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+
+  const handleToggleCompare = (playerId: string) => {
+    setSelectedCompareIds(prev => {
+      if (prev.includes(playerId)) {
+        return prev.filter(id => id !== playerId);
+      }
+      if (prev.length >= 2) {
+        return [prev[1], playerId];
+      }
+      return [...prev, playerId];
+    });
+  };
+
+  const comparePlayersList = players.filter(p => selectedCompareIds.includes(p.id));
+
   // Extra multi-game stats state inside the form
   const [formGamesList, setFormGamesList] = useState<PlayerStats[]>([]);
   const [newStatGameId, setNewStatGameId] = useState(SUPPORTED_GAMES[0].id);
@@ -587,9 +605,13 @@ export const PlayersPage = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
           {filteredPlayers.map((player) => (
-            <div key={player.id} onClick={() => handleCardClick(player)}>
-              <EsportsPlayerCard player={player} />
-            </div>
+            <EsportsPlayerCard 
+              key={player.id} 
+              player={player} 
+              onViewProfile={() => handleCardClick(player)}
+              onCompareToggle={() => handleToggleCompare(player.id)}
+              isCompareSelected={selectedCompareIds.includes(player.id)}
+            />
           ))}
         </div>
       )}
@@ -1446,6 +1468,216 @@ export const PlayersPage = () => {
         </div>
       )}
       </div>
+      {/* FLOATING COMPARISON BAR */}
+      {selectedCompareIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#0A0A0F]/90 backdrop-blur-xl border border-[#00D4FF]/30 p-4 rounded-2xl shadow-[0_10px_40px_rgba(0,212,255,0.25)] flex flex-wrap items-center gap-4 max-w-[95%] sm:max-w-[600px] animate-in slide-in-from-bottom duration-300">
+          <div className="flex items-center gap-2">
+            <div className="flex -space-x-2">
+              {comparePlayersList.map(p => (
+                <img 
+                  key={p.id}
+                  src={p.avatarUrl} 
+                  alt={p.name} 
+                  className="w-8 h-8 rounded-full border-2 border-[#0A0A0F] object-cover"
+                />
+              ))}
+            </div>
+            <div>
+              <p className="text-xs font-mono text-white font-bold">Player Comparison Stack</p>
+              <p className="text-[10px] text-gray-400 font-mono">
+                {selectedCompareIds.length === 1 
+                  ? "Select 1 more player to compare" 
+                  : "2 players selected"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-2 ml-auto">
+            <button
+              onClick={() => setSelectedCompareIds([])}
+              className="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 text-[10px] font-mono text-gray-300 transition-colors"
+            >
+              Reset
+            </button>
+            <button
+              disabled={selectedCompareIds.length < 2}
+              onClick={() => setShowCompareModal(true)}
+              className="px-4 py-1.5 rounded-lg bg-[#00D4FF] hover:bg-white disabled:bg-white/10 disabled:text-white/30 text-black font-bold font-mono text-[10px] uppercase tracking-wider transition-all duration-300 shadow-[0_0_15px_rgba(0,212,255,0.3)] disabled:shadow-none"
+            >
+              Compare Now
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* PLAYER COMPARISON MODAL */}
+      {showCompareModal && comparePlayersList.length === 2 && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="premium-gaming-card w-full max-w-4xl border border-[#00D4FF]/30 bg-[#0A0A0F] rounded-2xl p-6 md:p-8 shadow-[0_0_50px_rgba(0,212,255,0.15)] relative overflow-hidden animate-in zoom-in duration-300 flex flex-col max-h-[95vh]">
+            
+            {/* Cyber background aesthetics */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#00D4FF]/5 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#7B61FF]/5 rounded-full blur-3xl pointer-events-none"></div>
+
+            {/* Modal Header */}
+            <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-6">
+              <div>
+                <h3 className="text-lg md:text-xl font-display font-black tracking-wider text-white uppercase italic">
+                  Side-By-Side Arena Comparison
+                </h3>
+                <p className="text-xs font-mono text-[#00D4FF] uppercase tracking-widest mt-1">
+                  Tactical Attributes & Career Statistics
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCompareModal(false)}
+                className="p-2 rounded-full hover:bg-white/10 text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Content */}
+            <div className="flex-1 overflow-y-auto pr-1 space-y-8 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+              {/* Profile Headers Grid */}
+              <div className="grid grid-cols-2 gap-4 md:gap-8 border-b border-white/5 pb-6">
+                {comparePlayersList.map((p, idx) => {
+                  const r = p.rating || 85;
+                  return (
+                    <div key={p.id} className="flex flex-col items-center text-center">
+                      <div className="relative mb-3">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-[#00D4FF] to-[#7B61FF] rounded-full blur-sm opacity-50"></div>
+                        <img 
+                          src={p.avatarUrl} 
+                          alt={p.name} 
+                          className="w-20 h-20 md:w-24 md:h-24 rounded-full border-2 border-white/10 object-cover relative z-10"
+                        />
+                      </div>
+                      <h4 className="text-base md:text-lg font-display font-bold text-white uppercase tracking-tight truncate max-w-full">
+                        {p.name}
+                      </h4>
+                      <p className="text-xs font-mono text-[#00D4FF] font-bold mt-1 uppercase tracking-wide">
+                        {p.teamName || 'Free Agent'}
+                      </p>
+                      <p className="text-[10px] font-mono text-gray-500 uppercase mt-0.5">
+                        {p.game}
+                      </p>
+
+                      {/* Large OVR Rating Badge */}
+                      <div className="mt-4 flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl border border-white/10 bg-white/5 font-mono">
+                        <span className="text-[10px] text-gray-400 uppercase font-bold">OVR Rating:</span>
+                        <span className={`text-base font-black ${
+                          idx === 0 
+                            ? (p.rating || 85) >= (comparePlayersList[1].rating || 85) ? 'text-[#00E676]' : 'text-white'
+                            : (p.rating || 85) >= (comparePlayersList[0].rating || 85) ? 'text-[#00E676]' : 'text-white'
+                        }`}>{r}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Combat / Tactical Skill Bar Comparisons */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-mono text-gray-400 uppercase font-black tracking-widest text-center">
+                  Core Tactical Performance Ratings
+                </h4>
+
+                {[
+                  { label: 'SPD • REFLEX & SPEED', key: 'spd' },
+                  { label: 'PMK • TACTICS & PLAYMAKING', key: 'pmk' },
+                  { label: 'STR • STRENGTH & MECHANICS', key: 'str' },
+                  { label: 'PHY • RAW PHYSICALITY', key: 'phy' },
+                  { label: 'DEF • DEFENSIVE POSITIONING', key: 'def' },
+                  { label: 'CLU • CLUTCH CAPABILITY', key: 'clu' }
+                ].map((statDef) => {
+                  const statKey = statDef.key as keyof Player['skillStats'];
+                  const valA = comparePlayersList[0].skillStats?.[statKey] || 80;
+                  const valB = comparePlayersList[1].skillStats?.[statKey] || 80;
+
+                  return (
+                    <div key={statDef.key} className="space-y-1">
+                      <div className="flex justify-between items-center text-[10px] font-mono font-bold text-gray-400">
+                        <span className={valA >= valB ? 'text-[#00E676]' : ''}>{valA}</span>
+                        <span>{statDef.label}</span>
+                        <span className={valB >= valA ? 'text-[#00E676]' : ''}>{valB}</span>
+                      </div>
+                      
+                      {/* Comparison visual slider bars */}
+                      <div className="grid grid-cols-2 gap-2 h-2.5">
+                        {/* Player A bar (right aligned) */}
+                        <div className="bg-white/5 rounded-l-full overflow-hidden flex justify-end">
+                          <div 
+                            className={`h-full rounded-l-full transition-all duration-1000 ${
+                              valA >= valB 
+                                ? 'bg-gradient-to-l from-[#00D4FF] to-[#00E676] shadow-[0_0_8px_rgba(0,230,118,0.5)]' 
+                                : 'bg-white/20'
+                            }`}
+                            style={{ width: `${valA}%` }}
+                          ></div>
+                        </div>
+
+                        {/* Player B bar (left aligned) */}
+                        <div className="bg-white/5 rounded-r-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-r-full transition-all duration-1000 ${
+                              valB >= valA 
+                                ? 'bg-gradient-to-r from-[#00D4FF] to-[#00E676] shadow-[0_0_8px_rgba(0,230,118,0.5)]' 
+                                : 'bg-white/20'
+                            }`}
+                            style={{ width: `${valB}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Match / Career Statistics */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 md:p-6 space-y-4">
+                <h4 className="text-xs font-mono text-gray-400 uppercase font-black tracking-widest text-center">
+                  Career Match Statistics
+                </h4>
+
+                {[
+                  { label: 'Primary Game Win Rate', format: (p: Player) => `${p.gamesList?.[0]?.winRate || 55}%`, compare: (p1: Player, p2: Player) => (p1.gamesList?.[0]?.winRate || 55) - (p2.gamesList?.[0]?.winRate || 55) },
+                  { label: 'Competitive Matches Played', format: (p: Player) => `${p.gamesList?.[0]?.matchesPlayed || 120}`, compare: (p1: Player, p2: Player) => (p1.gamesList?.[0]?.matchesPlayed || 120) - (p2.gamesList?.[0]?.matchesPlayed || 120) },
+                  { label: 'Esports Prize Winnings', format: (p: Player) => `₨ ${(p.gamesList?.[0]?.prizeWon || 25000).toLocaleString()}`, compare: (p1: Player, p2: Player) => (p1.gamesList?.[0]?.prizeWon || 25000) - (p2.gamesList?.[0]?.prizeWon || 25000) }
+                ].map((rowDef, idx) => {
+                  const valAStr = rowDef.format(comparePlayersList[0]);
+                  const valBStr = rowDef.format(comparePlayersList[1]);
+                  const delta = rowDef.compare(comparePlayersList[0], comparePlayersList[1]);
+
+                  return (
+                    <div key={idx} className="grid grid-cols-3 gap-2 py-2 border-b border-white/5 items-center text-xs font-mono text-center">
+                      <span className={`font-bold ${delta >= 0 ? 'text-[#00E676]' : 'text-gray-300'}`}>
+                        {valAStr}
+                      </span>
+                      <span className="text-gray-500 text-[10px] uppercase">
+                        {rowDef.label}
+                      </span>
+                      <span className={`font-bold ${delta <= 0 ? 'text-[#00E676]' : 'text-gray-300'}`}>
+                        {valBStr}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Arena Footer */}
+            <div className="mt-6 pt-4 border-t border-white/10 flex justify-end">
+              <button
+                onClick={() => setShowCompareModal(false)}
+                className="px-6 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-mono font-bold uppercase transition-colors"
+              >
+                Close Arena
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

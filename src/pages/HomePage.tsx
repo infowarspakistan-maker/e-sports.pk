@@ -171,49 +171,29 @@ export const HomePage = () => {
           showDots={false}
           showProgressBar={false}
         />
-        {/* Modern Cyberpunk Search & CTA HUD Panel Overlay */}
+        {/* Modern Cyberpunk CTA HUD Panel Overlay */}
         <div className="absolute bottom-0 left-0 w-full z-30 pb-10 bg-gradient-to-t from-[#0A0A0F] to-transparent">
           <div className="max-w-[1440px] mx-auto px-6 md:px-10">
-            <div className="flex flex-col md:flex-row gap-6 items-center justify-between bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-[0_15px_40px_rgba(0,0,0,0.6)] relative overflow-hidden">
+            <div className="flex items-center justify-center bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-[0_15px_40px_rgba(0,0,0,0.6)] relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-r from-[#00D4FF]/5 to-transparent pointer-events-none"></div>
-              
-              {/* Left Column: Prominent Search Bar */}
-              <form onSubmit={handleSearchSubmit} className="w-full md:w-[450px] relative">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search players, teams, tournaments..."
-                    value={heroSearchQuery}
-                    onChange={(e) => setHeroSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-20 py-3.5 bg-black/50 border border-white/10 focus:border-[#00D4FF] focus:ring-1 focus:ring-[#00D4FF] rounded-xl text-white font-mono text-xs placeholder-gray-500 uppercase tracking-widest transition-all shadow-inner"
-                  />
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-                  <button
-                    type="submit"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#00D4FF] hover:bg-[#7B61FF] text-black hover:text-white font-mono text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors"
-                  >
-                    SEARCH
-                  </button>
-                </div>
-              </form>
 
-              {/* Right Column: CTA Buttons */}
-              <div className="flex flex-wrap gap-3 w-full md:w-auto justify-center md:justify-end">
+              {/* Centered Column: CTA Buttons */}
+              <div className="flex flex-wrap gap-4 w-full justify-center">
                 <Link
                   to="/register"
-                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-5 py-3.5 bg-white/5 hover:bg-[#00D4FF]/20 border border-white/10 hover:border-[#00D4FF] text-white font-mono text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-6 py-4 bg-white/5 hover:bg-[#00D4FF]/20 border border-white/10 hover:border-[#00D4FF] text-white font-mono text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(0,212,255,0.05)]"
                 >
                   Join as Player <ArrowRight className="w-3.5 h-3.5 text-[#00D4FF]" />
                 </Link>
                 <Link
                   to="/players"
-                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-5 py-3.5 bg-white/5 hover:bg-[#7B61FF]/20 border border-white/10 hover:border-[#7B61FF] text-white font-mono text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-6 py-4 bg-white/5 hover:bg-[#7B61FF]/20 border border-white/10 hover:border-[#7B61FF] text-white font-mono text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(123,97,255,0.05)]"
                 >
                   Find Talent <ArrowRight className="w-3.5 h-3.5 text-[#7B61FF]" />
                 </Link>
                 <Link
                   to="/made-in-pakistan"
-                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-5 py-3.5 bg-white/5 hover:bg-[#FFD700]/20 border border-white/10 hover:border-[#FFD700] text-white font-mono text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+                  className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 px-6 py-4 bg-white/5 hover:bg-[#FFD700]/20 border border-white/10 hover:border-[#FFD700] text-white font-mono text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(255,215,0,0.05)]"
                 >
                   Shop Gear <ArrowRight className="w-3.5 h-3.5 text-[#FFD700]" />
                 </Link>
@@ -224,6 +204,38 @@ export const HomePage = () => {
       </section>
 
       <LiveMatchTicker />
+
+      {/* Cyberpunk Search Bar Row */}
+      <div className="w-full bg-[#07070A] py-6 border-b border-white/5 relative z-20">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col">
+            <h4 className="text-sm font-display font-black text-white uppercase italic tracking-tighter leading-none mb-1">
+              SEARCH THE COALITION
+            </h4>
+            <p className="text-[10px] font-mono font-bold text-gray-500 uppercase tracking-widest">
+              Find players, active organizations, or current registrations instantly
+            </p>
+          </div>
+          <form onSubmit={handleSearchSubmit} className="w-full md:w-[500px] relative">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search players, teams, tournaments..."
+                value={heroSearchQuery}
+                onChange={(e) => setHeroSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-24 py-3 bg-black/50 border border-white/10 focus:border-[#00D4FF] focus:ring-1 focus:ring-[#00D4FF] rounded-xl text-white font-mono text-xs placeholder-gray-500 uppercase tracking-widest transition-all shadow-inner"
+              />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-[#00D4FF] hover:bg-[#7B61FF] text-black hover:text-white font-mono text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors"
+              >
+                SEARCH
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
 
       {/* Game Activity Hub (Marquee Row) */}
       <div className="w-full bg-[#0A0A0F]/30 border-b border-white/5 py-8 relative z-20 overflow-hidden">

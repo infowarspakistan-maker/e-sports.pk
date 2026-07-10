@@ -3,7 +3,8 @@ import { SliderManager } from '../components/admin/SliderManager';
 import { 
   LayoutDashboard, Users as UsersIcon, Gamepad2, Trophy, Briefcase, Image as ImageIcon,
   Newspaper, Rss, Link as LinkIcon, Settings as SettingsIcon, Plus, Trash2, Edit2, 
-  CheckCircle, AlertCircle, Play, Database, RefreshCw, X, Copy, ExternalLink, Filter, SlidersHorizontal
+  CheckCircle, AlertCircle, Play, Database, RefreshCw, X, Copy, ExternalLink, Filter, SlidersHorizontal,
+  ChevronDown, ChevronUp, Circle, Workflow
 } from 'lucide-react';
 import { db, updateCustomStorageConfig, type CustomStorageConfig } from '../lib/firebase';
 import { 
@@ -16,10 +17,17 @@ import { SUPPORTED_GAMES } from '../lib/constants';
 
 import { AdminRankings } from '../components/admin/AdminRankings';
 import { AuditCompliancePanel } from '../components/admin/AuditCompliancePanel';
+import { VisualBracket } from '../components/features/VisualBracket';
 
 export const AdminDashboard = () => {
   const { user } = useAuthContext();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
+    tournaments: true,
+    players: true,
+    teams: true,
+    news: true,
+  });
   const [stats, setStats] = useState({
     users: 0,
     players: 0,
@@ -68,6 +76,8 @@ export const AdminDashboard = () => {
   const [tournamentNestedTab, setTournamentNestedTab] = useState<'list' | 'create'>('list');
   const [showNewsModal, setShowNewsModal] = useState(false);
   const [showRssModal, setShowRssModal] = useState(false);
+  const [showBracketModal, setShowBracketModal] = useState(false);
+  const [selectedTournamentForBracket, setSelectedTournamentForBracket] = useState<any>(null);
   const [gameNestedTab, setGameNestedTab] = useState<'list' | 'create'>('list');
 
   // Edit states
@@ -697,23 +707,47 @@ export const AdminDashboard = () => {
     setShowTournamentModal(true);
   };
 
-  // Actions: Create news
+  // Actions: Create or Edit news
   const handleCreateNews = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const id = 'news_' + Math.random().toString(36).substr(2, 9);
-      await setDoc(doc(db, 'news', id), {
-        ...newsForm,
-        publishedAt: new Date(),
-        createdAt: new Date(),
-      });
-      showNotification('success', `Successfully published article "${newsForm.title}"`);
+      if (isEditMode && editingId) {
+        await updateDoc(doc(db, 'news', editingId), {
+          ...newsForm,
+          updatedAt: new Date(),
+        });
+        showNotification('success', `Successfully updated article "${newsForm.title}"`);
+      } else {
+        const id = 'news_' + Math.random().toString(36).substr(2, 9);
+        await setDoc(doc(db, 'news', id), {
+          ...newsForm,
+          publishedAt: new Date(),
+          createdAt: new Date(),
+        });
+        showNotification('success', `Successfully published article "${newsForm.title}"`);
+      }
       setShowNewsModal(false);
+      setEditingId(null);
+      setIsEditMode(false);
       loadActiveTabData();
       fetchStats();
     } catch (e: any) {
       showNotification('error', e.message);
     }
+  };
+
+  const handleEditNewsClick = (article: any) => {
+    setEditingId(article.id);
+    setIsEditMode(true);
+    setNewsForm({
+      title: article.title || '',
+      excerpt: article.excerpt || '',
+      content: article.content || '',
+      category: article.category || 'news',
+      featuredImage: article.featuredImage || '',
+      game: article.game || 'Tekken 8'
+    });
+    setShowNewsModal(true);
   };
 
   // Actions: Create RSS feed config
@@ -900,22 +934,7 @@ export const AdminDashboard = () => {
     }
   };
 
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'users', label: 'Users', icon: UsersIcon },
-    { id: 'players', label: 'Players', icon: Gamepad2 },
-    { id: 'teams', label: 'Teams', icon: Trophy },
-    { id: 'tournaments', label: 'Tournaments', icon: Play },
-    { id: 'rankings', label: 'Rankings', icon: Trophy },
-    { id: 'games', label: 'Games Ecosystem', icon: Gamepad2 },
-    { id: 'news', label: 'News', icon: Newspaper },
-    { id: 'media', label: 'Media Library', icon: ImageIcon },
-    { id: 'rss', label: 'RSS Feeds', icon: Rss },
-    { id: 'partners', label: 'Partners', icon: LinkIcon },
-    { id: 'slider', label: 'Slider Management', icon: SlidersHorizontal },
-    { id: 'audit', label: 'Audit & Compliance', icon: CheckCircle },
-    { id: 'settings', label: 'Settings', icon: SettingsIcon },
-  ];
+
 
   const renderContent = () => {
     // 1. Dashboard tab
@@ -1186,21 +1205,44 @@ export const AdminDashboard = () => {
                           </span>
                         </td>
                         <td className="py-4 px-5 text-right">
-                          <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button 
-                              onClick={() => handleEditPlayerClick(player)}
-                              className="p-2 text-[#A0A0AB] hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 rounded transition-all"
-                              title="Edit Player"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteItem('players', player.id)}
-                              className="p-2 text-[#A0A0AB] hover:text-[#FF4444] hover:bg-[#FF4444]/10 rounded transition-all"
-                              title="Delete Player"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                          <div className="flex justify-end items-center gap-3">
+                            {deletingId === player.id ? (
+                              <div className="flex items-center gap-1.5 bg-red-950/40 border border-red-500/30 rounded px-2.5 py-1 animate-in fade-in duration-200">
+                                <span className="text-[10px] text-red-400 font-bold font-mono">Confirm Delete?</span>
+                                <button
+                                  onClick={() => {
+                                    handleDeleteItem('players', player.id);
+                                    setDeletingId(null);
+                                  }}
+                                  className="px-2 py-0.5 bg-red-600 hover:bg-red-500 text-white rounded text-[10px] font-mono font-bold uppercase transition-all"
+                                >
+                                  Yes
+                                </button>
+                                <button
+                                  onClick={() => setDeletingId(null)}
+                                  className="px-2 py-0.5 bg-gray-700 hover:bg-gray-600 text-white rounded text-[10px] font-mono font-bold uppercase transition-all"
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <button 
+                                  onClick={() => handleEditPlayerClick(player)}
+                                  className="p-2 text-[#A0A0AB] hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 rounded transition-all"
+                                  title="Edit Player"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => setDeletingId(player.id)}
+                                  className="p-2 text-[#A0A0AB] hover:text-[#FF4444] hover:bg-[#FF4444]/10 rounded transition-all"
+                                  title="Delete Player"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1293,21 +1335,44 @@ export const AdminDashboard = () => {
                           </span>
                         </td>
                         <td className="py-4 px-5 text-right">
-                          <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button 
-                              onClick={() => handleEditTeamClick(team)}
-                              className="p-2 text-[#A0A0AB] hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 rounded transition-all"
-                              title="Edit Team"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteItem('teams', team.id)}
-                              className="p-2 text-[#A0A0AB] hover:text-[#FF4444] hover:bg-[#FF4444]/10 rounded transition-all"
-                              title="Delete Team"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                          <div className="flex justify-end items-center gap-3">
+                            {deletingId === team.id ? (
+                              <div className="flex items-center gap-1.5 bg-red-950/40 border border-red-500/30 rounded px-2.5 py-1 animate-in fade-in duration-200">
+                                <span className="text-[10px] text-red-400 font-bold font-mono">Confirm Delete?</span>
+                                <button
+                                  onClick={() => {
+                                    handleDeleteItem('teams', team.id);
+                                    setDeletingId(null);
+                                  }}
+                                  className="px-2 py-0.5 bg-red-600 hover:bg-red-500 text-white rounded text-[10px] font-mono font-bold uppercase transition-all"
+                                >
+                                  Yes
+                                </button>
+                                <button
+                                  onClick={() => setDeletingId(null)}
+                                  className="px-2 py-0.5 bg-gray-700 hover:bg-gray-600 text-white rounded text-[10px] font-mono font-bold uppercase transition-all"
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <button 
+                                  onClick={() => handleEditTeamClick(team)}
+                                  className="p-2 text-[#A0A0AB] hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 rounded transition-all"
+                                  title="Edit Team"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => setDeletingId(team.id)}
+                                  className="p-2 text-[#A0A0AB] hover:text-[#FF4444] hover:bg-[#FF4444]/10 rounded transition-all"
+                                  title="Delete Team"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1423,6 +1488,17 @@ export const AdminDashboard = () => {
                               ) : (
                                 <>
                                   <button 
+                                    onClick={() => {
+                                      setSelectedTournamentForBracket(t);
+                                      setShowBracketModal(true);
+                                    }}
+                                    className="p-1.5 text-gray-400 hover:text-[#7B61FF] hover:bg-[#7B61FF]/10 rounded border border-white/5 hover:border-[#7B61FF]/30 transition-all flex items-center gap-1 text-xs font-mono"
+                                    title="Manage Bracket"
+                                  >
+                                    <Workflow className="w-3.5 h-3.5" />
+                                    <span>Bracket</span>
+                                  </button>
+                                  <button 
                                     onClick={() => handleEditTournamentClick(t)}
                                     className="p-1.5 text-gray-400 hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 rounded border border-white/5 hover:border-[#00D4FF]/30 transition-all flex items-center gap-1 text-xs font-mono"
                                     title="Edit Tournament"
@@ -1463,7 +1539,19 @@ export const AdminDashboard = () => {
               <p className="text-sm text-[#A0A0AB] font-mono mt-2">Original journalism, analytical blogs, and RSS items synced in Firestore.</p>
             </div>
             <button 
-              onClick={() => setShowNewsModal(true)}
+              onClick={() => {
+                setEditingId(null);
+                setIsEditMode(false);
+                setNewsForm({
+                  title: '',
+                  excerpt: '',
+                  content: '',
+                  category: 'news',
+                  featuredImage: '',
+                  game: 'Tekken 8'
+                });
+                setShowNewsModal(true);
+              }}
               className="flex items-center gap-2 bg-transparent/5 hover:bg-[#00D4FF] text-white hover:text-black border border-white/10 hover:border-[#00D4FF] px-6 py-2.5 rounded font-mono text-xs font-bold uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(0,212,255,0.1)] hover:shadow-[0_0_25px_rgba(0,212,255,0.5)]"
             >
               <Plus className="w-4 h-4" /> Publish Article
@@ -1501,13 +1589,44 @@ export const AdminDashboard = () => {
                           </span>
                         </td>
                         <td className="py-4 px-5 text-right">
-                          <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button 
-                              onClick={() => handleDeleteItem('news', n.id)}
-                              className="p-2 text-[#A0A0AB] hover:text-[#FF4444] hover:bg-[#FF4444]/10 rounded transition-all"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                          <div className="flex justify-end items-center gap-3">
+                            {deletingId === n.id ? (
+                              <div className="flex items-center gap-1.5 bg-red-950/40 border border-red-500/30 rounded px-2.5 py-1 animate-in fade-in duration-200">
+                                <span className="text-[10px] text-red-400 font-bold font-mono">Confirm Delete?</span>
+                                <button
+                                  onClick={() => {
+                                    handleDeleteItem('news', n.id);
+                                    setDeletingId(null);
+                                  }}
+                                  className="px-2 py-0.5 bg-red-600 hover:bg-red-500 text-white rounded text-[10px] font-mono font-bold uppercase transition-all"
+                                >
+                                  Yes
+                                </button>
+                                <button
+                                  onClick={() => setDeletingId(null)}
+                                  className="px-2 py-0.5 bg-gray-700 hover:bg-gray-600 text-white rounded text-[10px] font-mono font-bold uppercase transition-all"
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <button 
+                                  onClick={() => handleEditNewsClick(n)}
+                                  className="p-2 text-[#A0A0AB] hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 rounded transition-all"
+                                  title="Edit Article"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => setDeletingId(n.id)}
+                                  className="p-2 text-[#A0A0AB] hover:text-[#FF4444] hover:bg-[#FF4444]/10 rounded transition-all"
+                                  title="Delete Article"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -2304,28 +2423,248 @@ export const AdminDashboard = () => {
     );
   };
 
+  const navGroups = [
+    {
+      title: 'Overview & Users',
+      items: [
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'users', label: 'Users', icon: UsersIcon },
+        { id: 'audit', label: 'Audit Log', icon: CheckCircle },
+      ]
+    },
+    {
+      title: 'Ecosystem',
+      items: [
+        { 
+          id: 'players', 
+          label: 'Players Directory', 
+          icon: Gamepad2,
+          children: [
+            { id: 'players', label: 'All Players', type: 'tab' },
+            { 
+              id: 'add-player', 
+              label: 'Add Athlete', 
+              type: 'action', 
+              action: () => {
+                setEditingId(null);
+                setIsEditMode(false);
+                setPlayerForm({
+                  name: '',
+                  game: 'Tekken 8',
+                  platform: 'PS5',
+                  city: 'Lahore',
+                  bio: '',
+                  availability: 'Lft',
+                  color: '#FF4444',
+                  icon: '🥊',
+                  avatarUrl: '',
+                  bannerUrl: '',
+                  youtubeUrl: '',
+                  totalPrize: 'Rs 0',
+                  matchesPlayed: '0',
+                  winRate: '0%',
+                  isApproved: true,
+                  sponsorshipScore: '50'
+                });
+                setShowPlayerModal(true);
+              } 
+            },
+          ]
+        },
+        { 
+          id: 'teams', 
+          label: 'Teams & Orgs', 
+          icon: Trophy,
+          children: [
+            { id: 'teams', label: 'All Teams', type: 'tab' },
+            { 
+              id: 'add-team', 
+              label: 'Register Org', 
+              type: 'action', 
+              action: () => {
+                setEditingId(null);
+                setIsEditMode(false);
+                setTeamForm({
+                  name: '',
+                  game: 'Tekken 8',
+                  location: 'Lahore',
+                  color: '#FF4444',
+                  status: 'Recruiting',
+                  bio: '',
+                  logoUrl: '',
+                  bannerUrl: '',
+                  isApproved: true
+                });
+                setShowTeamModal(true);
+              } 
+            },
+          ]
+        },
+        { id: 'games', label: 'Games Config', icon: Gamepad2 },
+      ]
+    },
+    {
+      title: 'Competitions',
+      items: [
+        { 
+          id: 'tournaments', 
+          label: 'Tournaments', 
+          icon: Play,
+          children: [
+            { id: 'tournaments', label: 'All Tournaments', type: 'tab' },
+            { 
+              id: 'add-tournament', 
+              label: 'Create Event', 
+              type: 'action', 
+              action: () => {
+                setEditingId(null);
+                setIsEditMode(false);
+                setTournamentForm({
+                  name: '',
+                  game: 'Tekken 8',
+                  gameId: 'tekken8',
+                  platform: 'PS5',
+                  prize: 'Rs 100,000',
+                  date: 'Aug 15 - Aug 17, 2026',
+                  registered: '0',
+                  maxTeams: '64',
+                  description: 'National Qualifier',
+                  status: 'upcoming',
+                  bannerUrl: '',
+                  icon: '🥊',
+                  color: '#00D4FF',
+                  entryFee: 'Rs 1,000',
+                  rules: '1. Only open to residents of Pakistan.\n2. Standard game balance rules apply.'
+                });
+                setShowTournamentModal(true);
+              } 
+            }
+          ]
+        },
+        { id: 'rankings', label: 'Leaderboards', icon: Trophy },
+      ]
+    },
+    {
+      title: 'Content Engine',
+      items: [
+        { 
+          id: 'news', 
+          label: 'News Articles', 
+          icon: Newspaper,
+          children: [
+            { id: 'news', label: 'All Articles', type: 'tab' },
+            { 
+              id: 'publish-article', 
+              label: 'Publish Article', 
+              type: 'action', 
+              action: () => {
+                setEditingId(null);
+                setIsEditMode(false);
+                setNewsForm({
+                  title: '',
+                  excerpt: '',
+                  content: '',
+                  category: 'news',
+                  featuredImage: '',
+                  game: 'Tekken 8'
+                });
+                setShowNewsModal(true);
+              } 
+            }
+          ]
+        },
+        { id: 'slider', label: 'Home Slider', icon: SlidersHorizontal },
+        { id: 'media', label: 'Media Library', icon: ImageIcon },
+        { id: 'rss', label: 'RSS Feeds', icon: Rss },
+        { id: 'partners', label: 'Brand Partners', icon: LinkIcon },
+      ]
+    },
+    {
+      title: 'System Settings',
+      items: [
+        { id: 'settings', label: 'Global Setup', icon: SettingsIcon },
+      ]
+    }
+  ];
+
   return (
-    <div className="flex min-h-[calc(100vh-64px)] bg-transparent text-white">
-      <aside className="w-64 bg-[#121B2A]/70 backdrop-blur-md border-r border-white/5 flex-col hidden md:flex shadow-[4px_0_24px_rgba(0,0,0,0.5)] z-10">
+    <div className="flex min-h-[calc(100vh-64px)] bg-transparent text-white select-none">
+      <aside className="w-64 bg-[#121B2A]/70 backdrop-blur-md border-r border-white/5 flex flex-col hidden md:flex shadow-[4px_0_24px_rgba(0,0,0,0.5)] z-10">
         <div className="p-6 border-b border-white/5">
-          <h2 className="text-xs font-mono font-bold text-[#A0A0AB] uppercase tracking-widest">Admin Panel</h2>
+          <h2 className="text-xs font-mono font-bold text-[#00D4FF] uppercase tracking-widest flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#00D4FF] animate-pulse"></span>
+            E-Sports Pakistan
+          </h2>
+          <span className="text-[10px] font-mono text-gray-500 block mt-1 uppercase">Unified Control Deck</span>
         </div>
-        <nav className="flex-1 p-4 space-y-2">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded text-sm font-mono tracking-wide uppercase transition-all duration-300 ${
-                activeTab === item.id 
-                  ? 'bg-[#00D4FF]/10 text-[#00D4FF] shadow-[0_0_15px_rgba(0,212,255,0.15)] border border-[#00D4FF]/20' 
-                  : 'text-[#A0A0AB] hover:bg-transparent/5 hover:text-white border border-transparent'
-              }`}
-            >
-              <item.icon className={`w-4 h-4 ${activeTab === item.id ? 'text-[#00D4FF]' : 'text-[#A0A0AB]'}`} />
-              {item.label}
-            </button>
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {navGroups.map((group, gIdx) => (
+            <div key={gIdx} className="space-y-2">
+              <h3 className="text-[10px] font-mono font-bold text-gray-500 uppercase tracking-widest px-3 mb-1">{group.title}</h3>
+              <div className="space-y-1">
+                {group.items.map((item) => {
+                  const isParentActive = activeTab === item.id;
+                  const hasChildren = !!item.children;
+                  const isExpanded = !!expandedMenus[item.id];
+
+                  return (
+                    <div key={item.id} className="space-y-1">
+                      <button
+                        onClick={() => {
+                          if (hasChildren) {
+                            setExpandedMenus(prev => ({ ...prev, [item.id]: !prev[item.id] }));
+                          }
+                          setActiveTab(item.id);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded text-xs font-mono tracking-wide uppercase transition-all duration-300 ${
+                          isParentActive 
+                            ? 'bg-[#00D4FF]/10 text-[#00D4FF] shadow-[0_0_12px_rgba(0,212,255,0.12)] border border-[#00D4FF]/20' 
+                            : 'text-[#A0A0AB] hover:bg-white/5 hover:text-white border border-transparent'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <item.icon className={`w-4 h-4 ${isParentActive ? 'text-[#00D4FF]' : 'text-[#A0A0AB]'}`} />
+                          <span>{item.label}</span>
+                        </div>
+                        {hasChildren && (
+                          isExpanded ? <ChevronUp className="w-3.5 h-3.5 opacity-60" /> : <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                        )}
+                      </button>
+
+                      {hasChildren && isExpanded && (
+                        <div className="pl-6 space-y-1 border-l border-white/5 ml-5 mt-1 animate-in slide-in-from-top-1 duration-200">
+                          {item.children.map((child, cIdx) => {
+                            const isChildActive = activeTab === child.id && child.type === 'tab';
+                            return (
+                              <button
+                                key={cIdx}
+                                onClick={() => {
+                                  if (child.type === 'action' && child.action) {
+                                    child.action();
+                                  } else {
+                                    setActiveTab(child.id);
+                                  }
+                                }}
+                                className={`w-full flex items-center gap-2 px-3 py-1.5 rounded text-[11px] font-mono tracking-wide uppercase transition-all ${
+                                  isChildActive
+                                    ? 'text-[#00D4FF] font-bold font-mono'
+                                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                }`}
+                              >
+                                <Circle className={`w-1 h-1 ${isChildActive ? 'fill-[#00D4FF] text-[#00D4FF]' : 'text-gray-600'}`} />
+                                <span>{child.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           ))}
-        </nav>
+        </div>
       </aside>
       
       <main className="flex-1 min-w-0 p-6 md:p-10 overflow-y-auto overflow-x-hidden relative">
@@ -2631,7 +2970,7 @@ export const AdminDashboard = () => {
                     <option value="" disabled>-- Select Game --</option>
                     {(gamesList.length > 0 ? gamesList : SUPPORTED_GAMES).map(g => (
                       <option key={g.id} value={g.id}>
-                        {g.icon} {g.name}
+                        {(g.icon && g.icon.startsWith('http')) ? '🎮' : g.icon} {g.name}
                       </option>
                     ))}
                   </select>
@@ -2718,7 +3057,7 @@ export const AdminDashboard = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
           <div className="bg-[#1A1A2E] rounded-2xl w-full max-w-4xl border border-[#2A2A40] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
             <div className="p-6 border-b border-[#2A2A40] flex justify-between items-center bg-white/5">
-              <h3 className="font-display font-bold text-white uppercase tracking-wider">Publish Esports Article</h3>
+              <h3 className="font-display font-bold text-white uppercase tracking-wider">{isEditMode ? 'Edit Esports Article' : 'Publish Esports Article'}</h3>
               <button onClick={() => setShowNewsModal(false)} className="text-gray-400 hover:text-[#00D4FF] transition-colors"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleCreateNews} className="p-6 space-y-6 max-h-[90vh] overflow-y-auto">
@@ -2771,7 +3110,7 @@ export const AdminDashboard = () => {
                 <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Full Content</label>
                 <textarea required value={newsForm.content} onChange={e => setNewsForm({...newsForm, content: e.target.value})} className="w-full px-3 py-2 border border-white/10 rounded-lg text-sm" rows={4} placeholder="Full journalistic report..."></textarea>
               </div>
-              <button type="submit" className="w-full bg-[#1A73E8] hover:bg-[#1557B0] text-white py-2.5 rounded-lg text-sm font-medium transition-colors">Publish Article</button>
+              <button type="submit" className="w-full bg-[#1A73E8] hover:bg-[#1557B0] text-white py-2.5 rounded-lg text-sm font-medium transition-colors">{isEditMode ? 'Update Article' : 'Publish Article'}</button>
             </form>
           </div>
         </div>
@@ -2809,6 +3148,52 @@ export const AdminDashboard = () => {
       )}
 
       {/* MODAL 7: Create/Edit Game */}
+      
+      {/* MODAL 8: Manage Tournament Bracket */}
+      {showBracketModal && selectedTournamentForBracket && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-xl p-4 md:p-8 overflow-y-auto">
+          <div className="bg-[#050505] rounded-none w-full max-w-7xl border border-white/10 shadow-[0_0_100px_rgba(0,212,255,0.1)] overflow-hidden animate-in fade-in zoom-in duration-500 flex flex-col max-h-full">
+            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#0A0A0A] relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#00D4FF]/5 to-transparent"></div>
+              <div className="relative z-10">
+                <h3 className="font-display font-black text-white uppercase italic tracking-widest text-xl flex items-center gap-3">
+                  <Workflow className="w-6 h-6 text-[#00D4FF]" />
+                  <span>Bracket Builder: {selectedTournamentForBracket.name}</span>
+                </h3>
+                <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest mt-1">Live Tournament Path Visualization Engine</p>
+              </div>
+              <button 
+                onClick={() => setShowBracketModal(false)} 
+                className="relative z-10 p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4 md:p-8 bg-[#020202]">
+              <VisualBracket tournamentId={selectedTournamentForBracket.id} isAdmin={true} />
+            </div>
+            <div className="p-6 border-t border-white/10 bg-[#0A0A0A] flex justify-between items-center">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#00D4FF] animate-pulse"></div>
+                  <span className="text-[9px] font-mono text-gray-400 uppercase tracking-widest">Database Sync Active</span>
+                </div>
+                <div className="h-4 w-px bg-white/10"></div>
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-3 h-3 text-[#FFD700]" />
+                  <span className="text-[9px] font-mono text-gray-400 uppercase tracking-widest">{selectedTournamentForBracket.prize} Prize Pool</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowBracketModal(false)}
+                className="px-8 py-2.5 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded font-mono text-xs font-bold uppercase tracking-widest transition-all"
+              >
+                Close Builder
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
